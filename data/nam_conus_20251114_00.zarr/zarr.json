@@ -1,0 +1,658 @@
+{
+  "attributes": {
+    "title": "NAM CONUS Forecast",
+    "institution": "NOAA/NCEP",
+    "source": "NAM CONUS 12km",
+    "references": "https://www.emc.ncep.noaa.gov/index.php?branch=NAM",
+    "comment": "NAM CONUS forecast data reformatted to Zarr",
+    "Conventions": "CF-1.8",
+    "reference_time": "2025-11-14T00:00:00",
+    "projection": "Lambert_Conformal",
+    "grid_resolution": "12 km",
+    "update_frequency": "6 hours"
+  },
+  "zarr_format": 3,
+  "consolidated_metadata": {
+    "kind": "inline",
+    "must_understand": false,
+    "metadata": {
+      "d2m": {
+        "shape": [
+          1,
+          9,
+          428,
+          614
+        ],
+        "data_type": "float32",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              1,
+              3,
+              107,
+              307
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "zstd",
+            "configuration": {
+              "level": 0,
+              "checksum": false
+            }
+          }
+        ],
+        "attributes": {
+          "GRIB_paramId": 168,
+          "GRIB_dataType": "fc",
+          "GRIB_numberOfPoints": 262792,
+          "GRIB_typeOfLevel": "heightAboveGround",
+          "GRIB_stepUnits": 1,
+          "GRIB_stepType": "instant",
+          "GRIB_gridType": "lambert",
+          "GRIB_uvRelativeToGrid": 1,
+          "GRIB_DxInMetres": 12191.0,
+          "GRIB_DyInMetres": 12191.0,
+          "GRIB_LaDInDegrees": 25.0,
+          "GRIB_Latin1InDegrees": 25.0,
+          "GRIB_Latin2InDegrees": 25.0,
+          "GRIB_LoVInDegrees": 265.0,
+          "GRIB_NV": 0,
+          "GRIB_Nx": 614,
+          "GRIB_Ny": 428,
+          "GRIB_cfName": "unknown",
+          "GRIB_cfVarName": "d2m",
+          "GRIB_gridDefinitionDescription": "Lambert Conformal can be secant or tangent, conical or bipolar",
+          "GRIB_iScansNegatively": 0,
+          "GRIB_jPointsAreConsecutive": 0,
+          "GRIB_jScansPositively": 1,
+          "GRIB_latitudeOfFirstGridPointInDegrees": 12.19,
+          "GRIB_latitudeOfSouthernPoleInDegrees": -90.0,
+          "GRIB_longitudeOfFirstGridPointInDegrees": 226.541,
+          "GRIB_longitudeOfSouthernPoleInDegrees": 0.0,
+          "GRIB_missingValue": 3.4028234663852886e+38,
+          "GRIB_name": "2 metre dewpoint temperature",
+          "GRIB_shortName": "2d",
+          "GRIB_units": "K",
+          "long_name": "2 metre dewpoint temperature",
+          "units": "K",
+          "standard_name": "dew_point_temperature",
+          "coordinates": "time step heightAboveGround latitude longitude valid_time",
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "time",
+          "step",
+          "y",
+          "x"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "latitude": {
+        "shape": [
+          428,
+          614
+        ],
+        "data_type": "float64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              107,
+              307
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "zstd",
+            "configuration": {
+              "level": 0,
+              "checksum": false
+            }
+          }
+        ],
+        "attributes": {
+          "units": "degrees_north",
+          "standard_name": "latitude",
+          "long_name": "latitude",
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "y",
+          "x"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "longitude": {
+        "shape": [
+          428,
+          614
+        ],
+        "data_type": "float64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              107,
+              307
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "zstd",
+            "configuration": {
+              "level": 0,
+              "checksum": false
+            }
+          }
+        ],
+        "attributes": {
+          "units": "degrees_east",
+          "standard_name": "longitude",
+          "long_name": "longitude",
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "y",
+          "x"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "prmsl": {
+        "shape": [
+          1,
+          9,
+          428,
+          614
+        ],
+        "data_type": "float32",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              1,
+              3,
+              107,
+              307
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "zstd",
+            "configuration": {
+              "level": 0,
+              "checksum": false
+            }
+          }
+        ],
+        "attributes": {
+          "GRIB_paramId": 260074,
+          "GRIB_dataType": "fc",
+          "GRIB_numberOfPoints": 262792,
+          "GRIB_typeOfLevel": "meanSea",
+          "GRIB_stepUnits": 1,
+          "GRIB_stepType": "instant",
+          "GRIB_gridType": "lambert",
+          "GRIB_uvRelativeToGrid": 1,
+          "GRIB_DxInMetres": 12191.0,
+          "GRIB_DyInMetres": 12191.0,
+          "GRIB_LaDInDegrees": 25.0,
+          "GRIB_Latin1InDegrees": 25.0,
+          "GRIB_Latin2InDegrees": 25.0,
+          "GRIB_LoVInDegrees": 265.0,
+          "GRIB_NV": 0,
+          "GRIB_Nx": 614,
+          "GRIB_Ny": 428,
+          "GRIB_cfName": "unknown",
+          "GRIB_cfVarName": "prmsl",
+          "GRIB_gridDefinitionDescription": "Lambert Conformal can be secant or tangent, conical or bipolar",
+          "GRIB_iScansNegatively": 0,
+          "GRIB_jPointsAreConsecutive": 0,
+          "GRIB_jScansPositively": 1,
+          "GRIB_latitudeOfFirstGridPointInDegrees": 12.19,
+          "GRIB_latitudeOfSouthernPoleInDegrees": -90.0,
+          "GRIB_longitudeOfFirstGridPointInDegrees": 226.541,
+          "GRIB_longitudeOfSouthernPoleInDegrees": 0.0,
+          "GRIB_missingValue": 3.4028234663852886e+38,
+          "GRIB_name": "Pressure reduced to MSL",
+          "GRIB_shortName": "prmsl",
+          "GRIB_units": "Pa",
+          "long_name": "Mean sea level pressure",
+          "units": "Pa",
+          "standard_name": "air_pressure_at_mean_sea_level",
+          "coordinates": "time step meanSea latitude longitude valid_time",
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "time",
+          "step",
+          "y",
+          "x"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "step": {
+        "shape": [
+          9
+        ],
+        "data_type": "int64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              9
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": 0,
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "zstd",
+            "configuration": {
+              "level": 0,
+              "checksum": false
+            }
+          }
+        ],
+        "attributes": {},
+        "dimension_names": [
+          "step"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "t2m": {
+        "shape": [
+          1,
+          9,
+          428,
+          614
+        ],
+        "data_type": "float32",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              1,
+              3,
+              107,
+              307
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "zstd",
+            "configuration": {
+              "level": 0,
+              "checksum": false
+            }
+          }
+        ],
+        "attributes": {
+          "GRIB_paramId": 167,
+          "GRIB_dataType": "fc",
+          "GRIB_numberOfPoints": 262792,
+          "GRIB_typeOfLevel": "heightAboveGround",
+          "GRIB_stepUnits": 1,
+          "GRIB_stepType": "instant",
+          "GRIB_gridType": "lambert",
+          "GRIB_uvRelativeToGrid": 1,
+          "GRIB_DxInMetres": 12191.0,
+          "GRIB_DyInMetres": 12191.0,
+          "GRIB_LaDInDegrees": 25.0,
+          "GRIB_Latin1InDegrees": 25.0,
+          "GRIB_Latin2InDegrees": 25.0,
+          "GRIB_LoVInDegrees": 265.0,
+          "GRIB_NV": 0,
+          "GRIB_Nx": 614,
+          "GRIB_Ny": 428,
+          "GRIB_cfName": "air_temperature",
+          "GRIB_cfVarName": "t2m",
+          "GRIB_gridDefinitionDescription": "Lambert Conformal can be secant or tangent, conical or bipolar",
+          "GRIB_iScansNegatively": 0,
+          "GRIB_jPointsAreConsecutive": 0,
+          "GRIB_jScansPositively": 1,
+          "GRIB_latitudeOfFirstGridPointInDegrees": 12.19,
+          "GRIB_latitudeOfSouthernPoleInDegrees": -90.0,
+          "GRIB_longitudeOfFirstGridPointInDegrees": 226.541,
+          "GRIB_longitudeOfSouthernPoleInDegrees": 0.0,
+          "GRIB_missingValue": 3.4028234663852886e+38,
+          "GRIB_name": "2 metre temperature",
+          "GRIB_shortName": "2t",
+          "GRIB_units": "K",
+          "long_name": "2 metre temperature",
+          "units": "K",
+          "standard_name": "air_temperature",
+          "coordinates": "time step heightAboveGround latitude longitude valid_time",
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "time",
+          "step",
+          "y",
+          "x"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "time": {
+        "shape": [
+          1
+        ],
+        "data_type": "int64",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              1
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": 0,
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "zstd",
+            "configuration": {
+              "level": 0,
+              "checksum": false
+            }
+          }
+        ],
+        "attributes": {
+          "units": "days since 2025-11-14 00:00:00",
+          "calendar": "proleptic_gregorian"
+        },
+        "dimension_names": [
+          "time"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "u10": {
+        "shape": [
+          1,
+          9,
+          428,
+          614
+        ],
+        "data_type": "float32",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              1,
+              3,
+              107,
+              307
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "zstd",
+            "configuration": {
+              "level": 0,
+              "checksum": false
+            }
+          }
+        ],
+        "attributes": {
+          "GRIB_paramId": 165,
+          "GRIB_dataType": "fc",
+          "GRIB_numberOfPoints": 262792,
+          "GRIB_typeOfLevel": "heightAboveGround",
+          "GRIB_stepUnits": 1,
+          "GRIB_stepType": "instant",
+          "GRIB_gridType": "lambert",
+          "GRIB_uvRelativeToGrid": 1,
+          "GRIB_DxInMetres": 12191.0,
+          "GRIB_DyInMetres": 12191.0,
+          "GRIB_LaDInDegrees": 25.0,
+          "GRIB_Latin1InDegrees": 25.0,
+          "GRIB_Latin2InDegrees": 25.0,
+          "GRIB_LoVInDegrees": 265.0,
+          "GRIB_NV": 0,
+          "GRIB_Nx": 614,
+          "GRIB_Ny": 428,
+          "GRIB_cfName": "eastward_wind",
+          "GRIB_cfVarName": "u10",
+          "GRIB_gridDefinitionDescription": "Lambert Conformal can be secant or tangent, conical or bipolar",
+          "GRIB_iScansNegatively": 0,
+          "GRIB_jPointsAreConsecutive": 0,
+          "GRIB_jScansPositively": 1,
+          "GRIB_latitudeOfFirstGridPointInDegrees": 12.19,
+          "GRIB_latitudeOfSouthernPoleInDegrees": -90.0,
+          "GRIB_longitudeOfFirstGridPointInDegrees": 226.541,
+          "GRIB_longitudeOfSouthernPoleInDegrees": 0.0,
+          "GRIB_missingValue": 3.4028234663852886e+38,
+          "GRIB_name": "10 metre U wind component",
+          "GRIB_shortName": "10u",
+          "GRIB_units": "m s**-1",
+          "long_name": "10 metre U wind component",
+          "units": "m s**-1",
+          "standard_name": "eastward_wind",
+          "coordinates": "time step heightAboveGround latitude longitude valid_time",
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "time",
+          "step",
+          "y",
+          "x"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      },
+      "v10": {
+        "shape": [
+          1,
+          9,
+          428,
+          614
+        ],
+        "data_type": "float32",
+        "chunk_grid": {
+          "name": "regular",
+          "configuration": {
+            "chunk_shape": [
+              1,
+              3,
+              107,
+              307
+            ]
+          }
+        },
+        "chunk_key_encoding": {
+          "name": "default",
+          "configuration": {
+            "separator": "/"
+          }
+        },
+        "fill_value": "NaN",
+        "codecs": [
+          {
+            "name": "bytes",
+            "configuration": {
+              "endian": "little"
+            }
+          },
+          {
+            "name": "zstd",
+            "configuration": {
+              "level": 0,
+              "checksum": false
+            }
+          }
+        ],
+        "attributes": {
+          "GRIB_paramId": 166,
+          "GRIB_dataType": "fc",
+          "GRIB_numberOfPoints": 262792,
+          "GRIB_typeOfLevel": "heightAboveGround",
+          "GRIB_stepUnits": 1,
+          "GRIB_stepType": "instant",
+          "GRIB_gridType": "lambert",
+          "GRIB_uvRelativeToGrid": 1,
+          "GRIB_DxInMetres": 12191.0,
+          "GRIB_DyInMetres": 12191.0,
+          "GRIB_LaDInDegrees": 25.0,
+          "GRIB_Latin1InDegrees": 25.0,
+          "GRIB_Latin2InDegrees": 25.0,
+          "GRIB_LoVInDegrees": 265.0,
+          "GRIB_NV": 0,
+          "GRIB_Nx": 614,
+          "GRIB_Ny": 428,
+          "GRIB_cfName": "northward_wind",
+          "GRIB_cfVarName": "v10",
+          "GRIB_gridDefinitionDescription": "Lambert Conformal can be secant or tangent, conical or bipolar",
+          "GRIB_iScansNegatively": 0,
+          "GRIB_jPointsAreConsecutive": 0,
+          "GRIB_jScansPositively": 1,
+          "GRIB_latitudeOfFirstGridPointInDegrees": 12.19,
+          "GRIB_latitudeOfSouthernPoleInDegrees": -90.0,
+          "GRIB_longitudeOfFirstGridPointInDegrees": 226.541,
+          "GRIB_longitudeOfSouthernPoleInDegrees": 0.0,
+          "GRIB_missingValue": 3.4028234663852886e+38,
+          "GRIB_name": "10 metre V wind component",
+          "GRIB_shortName": "10v",
+          "GRIB_units": "m s**-1",
+          "long_name": "10 metre V wind component",
+          "units": "m s**-1",
+          "standard_name": "northward_wind",
+          "coordinates": "time step heightAboveGround latitude longitude valid_time",
+          "_FillValue": "AAAAAAAA+H8="
+        },
+        "dimension_names": [
+          "time",
+          "step",
+          "y",
+          "x"
+        ],
+        "zarr_format": 3,
+        "node_type": "array",
+        "storage_transformers": []
+      }
+    }
+  },
+  "node_type": "group"
+}

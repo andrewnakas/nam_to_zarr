@@ -1,0 +1,89 @@
+{
+  "shape": [
+    1,
+    9,
+    428,
+    614
+  ],
+  "data_type": "float32",
+  "chunk_grid": {
+    "name": "regular",
+    "configuration": {
+      "chunk_shape": [
+        1,
+        3,
+        107,
+        307
+      ]
+    }
+  },
+  "chunk_key_encoding": {
+    "name": "default",
+    "configuration": {
+      "separator": "/"
+    }
+  },
+  "fill_value": "NaN",
+  "codecs": [
+    {
+      "name": "bytes",
+      "configuration": {
+        "endian": "little"
+      }
+    },
+    {
+      "name": "zstd",
+      "configuration": {
+        "level": 0,
+        "checksum": false
+      }
+    }
+  ],
+  "attributes": {
+    "GRIB_paramId": 260074,
+    "GRIB_dataType": "fc",
+    "GRIB_numberOfPoints": 262792,
+    "GRIB_typeOfLevel": "meanSea",
+    "GRIB_stepUnits": 1,
+    "GRIB_stepType": "instant",
+    "GRIB_gridType": "lambert",
+    "GRIB_uvRelativeToGrid": 1,
+    "GRIB_DxInMetres": 12191.0,
+    "GRIB_DyInMetres": 12191.0,
+    "GRIB_LaDInDegrees": 25.0,
+    "GRIB_Latin1InDegrees": 25.0,
+    "GRIB_Latin2InDegrees": 25.0,
+    "GRIB_LoVInDegrees": 265.0,
+    "GRIB_NV": 0,
+    "GRIB_Nx": 614,
+    "GRIB_Ny": 428,
+    "GRIB_cfName": "unknown",
+    "GRIB_cfVarName": "prmsl",
+    "GRIB_gridDefinitionDescription": "Lambert Conformal can be secant or tangent, conical or bipolar",
+    "GRIB_iScansNegatively": 0,
+    "GRIB_jPointsAreConsecutive": 0,
+    "GRIB_jScansPositively": 1,
+    "GRIB_latitudeOfFirstGridPointInDegrees": 12.19,
+    "GRIB_latitudeOfSouthernPoleInDegrees": -90.0,
+    "GRIB_longitudeOfFirstGridPointInDegrees": 226.541,
+    "GRIB_longitudeOfSouthernPoleInDegrees": 0.0,
+    "GRIB_missingValue": 3.4028234663852886e+38,
+    "GRIB_name": "Pressure reduced to MSL",
+    "GRIB_shortName": "prmsl",
+    "GRIB_units": "Pa",
+    "long_name": "Mean sea level pressure",
+    "units": "Pa",
+    "standard_name": "air_pressure_at_mean_sea_level",
+    "coordinates": "time step meanSea latitude longitude valid_time",
+    "_FillValue": "AAAAAAAA+H8="
+  },
+  "dimension_names": [
+    "time",
+    "step",
+    "y",
+    "x"
+  ],
+  "zarr_format": 3,
+  "node_type": "array",
+  "storage_transformers": []
+}
