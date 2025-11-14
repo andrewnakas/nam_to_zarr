@@ -102,6 +102,8 @@ class NAMCONUSRegionJob:
                             "indexpath": "",  # Disable index file creation
                         },
                     )
+                    # Load data into memory before we delete the temp file
+                    ds.load()
                     datasets[level_type] = ds
                     logger.debug(f"Read {len(ds.data_vars)} variables from {level_type}")
                 except Exception as e:
@@ -112,6 +114,7 @@ class NAMCONUSRegionJob:
                 logger.error("No datasets could be read from GRIB file")
                 return {}
 
+            logger.info(f"Successfully loaded {len(datasets)} level types into memory")
             return datasets
 
         except requests.exceptions.HTTPError as e:
