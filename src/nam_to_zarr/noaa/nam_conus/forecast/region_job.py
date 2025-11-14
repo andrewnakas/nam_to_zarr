@@ -61,14 +61,14 @@ class NAMCONUSRegionJob:
         )
         return url
 
-    def download_and_read_grib(self, forecast_hour: int) -> xr.Dataset | None:
-        """Download and read a GRIB2 file.
+    def download_and_read_grib(self, forecast_hour: int) -> dict[str, xr.Dataset]:
+        """Download and read a GRIB2 file, returning datasets by level type.
 
         Args:
             forecast_hour: Forecast hour to retrieve
 
         Returns:
-            xarray Dataset with the GRIB2 data, or None if download fails
+            Dictionary mapping level types to xarray Datasets, or empty dict if download fails
         """
         url = self.get_grib_url(forecast_hour)
         logger.info(f"Downloading GRIB2 file: {url}")
@@ -87,15 +87,32 @@ class NAMCONUSRegionJob:
 
             logger.info(f"Downloaded to {temp_file}, reading with cfgrib...")
 
-            # Read with cfgrib
-            ds = xr.open_dataset(
-                temp_file,
-                engine="cfgrib",
-                backend_kwargs={
-                    "indexpath": "",  # Disable index file creation
-                },
-            )
-            return ds
+            # NAM GRIB2 files contain multiple level types, we need to read them separately
+            # We need: heightAboveGround (2m, 10m), surface, and meanSea
+            level_types = ["heightAboveGround", "surface", "meanSea", "atmosphereSingleLayer"]
+            datasets = {}
+
+            for level_type in level_types:
+                try:
+                    ds = xr.open_dataset(
+                        temp_file,
+                        engine="cfgrib",
+                        backend_kwargs={
+                            "filter_by_keys": {"typeOfLevel": level_type},
+                            "indexpath": "",  # Disable index file creation
+                        },
+                    )
+                    datasets[level_type] = ds
+                    logger.debug(f"Read {len(ds.data_vars)} variables from {level_type}")
+                except Exception as e:
+                    logger.debug(f"No data for level type {level_type}: {e}")
+                    continue
+
+            if not datasets:
+                logger.error("No datasets could be read from GRIB file")
+                return {}
+
+            return datasets
 
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 404:
@@ -106,13 +123,13 @@ class NAMCONUSRegionJob:
                 logger.info("  3. The file naming convention is different")
             else:
                 logger.error(f"HTTP error downloading {url}: {e}")
-            return None
+            return {}
         except requests.exceptions.RequestException as e:
             logger.error(f"Network error downloading {url}: {e}")
-            return None
+            return {}
         except Exception as e:
             logger.error(f"Failed to read GRIB2 file {url}: {e}")
-            return None
+            return {}
         finally:
             # Clean up temporary file
             if temp_file and Path(temp_file).exists():
@@ -176,17 +193,25 @@ class NAMCONUSRegionJob:
         """
         logger.info(f"Processing forecast hour {forecast_hour}")
 
-        # Download and read GRIB2 file
-        ds_grib = self.download_and_read_grib(forecast_hour)
-        if ds_grib is None:
+        # Download and read GRIB2 file (returns dict of datasets by level type)
+        datasets_by_level = self.download_and_read_grib(forecast_hour)
+        if not datasets_by_level:
             return None
 
-        # Extract configured variables
+        # Extract configured variables from the appropriate level datasets
         data_vars = {}
         for var_name, var_config in self.config.variables.items():
-            da = self.extract_variable(ds_grib, var_name, var_config)
+            # Try to find the variable in each level dataset
+            da = None
+            for level_type, ds_grib in datasets_by_level.items():
+                da = self.extract_variable(ds_grib, var_name, var_config)
+                if da is not None:
+                    break
+
             if da is not None:
                 data_vars[var_name] = da
+            else:
+                logger.warning(f"Variable {var_name} not found in any level dataset")
 
         if not data_vars:
             logger.warning(f"No variables extracted for forecast hour {forecast_hour}")
@@ -198,8 +223,9 @@ class NAMCONUSRegionJob:
         # Add forecast hour as coordinate
         ds = ds.expand_dims({"step": [forecast_hour]})
 
-        # Close the GRIB dataset
-        ds_grib.close()
+        # Close the GRIB datasets
+        for ds_grib in datasets_by_level.values():
+            ds_grib.close()
 
         return ds
 
