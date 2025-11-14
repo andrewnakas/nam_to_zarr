@@ -1,5 +1,5 @@
 {
-  "generated": "2025-11-14T22:31:44.799752",
+  "generated": "2025-11-14T23:59:58.555507",
   "datasets": [
     {
       "name": "nam_conus_20251114_18.zarr",
@@ -28,12 +28,12 @@
       ],
       "dimensions": {
         "time": 1,
-        "step": 25,
+        "step": 49,
         "y": 428,
         "x": 614,
         "isobaricInhPa": 6
       },
-      "size_mb": 532.41086769104
+      "size_mb": 1045.8475484848022
     }
   ]
 }
