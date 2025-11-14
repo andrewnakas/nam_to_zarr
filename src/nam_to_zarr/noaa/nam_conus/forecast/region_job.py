@@ -12,7 +12,6 @@ from typing import Any
 import numpy as np
 import requests
 import xarray as xr
-from numcodecs import Blosc
 
 from .template_config import NAMCONUSTemplateConfig
 
@@ -295,16 +294,11 @@ class NAMCONUSRegionJob:
             # Ensure output directory exists
             self.output_path.parent.mkdir(parents=True, exist_ok=True)
 
-            # Write to Zarr with compression
-            compressor = Blosc(cname="lz4", clevel=5, shuffle=Blosc.SHUFFLE)
-            encoding = {}
-            for var in ds_combined.data_vars:
-                encoding[var] = {"compressor": compressor}
-
+            # Write to Zarr with default compression
+            # xarray will automatically apply compression
             ds_combined.to_zarr(
                 self.output_path,
                 mode="w",
-                encoding=encoding,
                 consolidated=True,
             )
 
