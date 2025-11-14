@@ -180,6 +180,16 @@ class NAMCONUSRegionJob:
                     logger.warning(f"Variable {grib_name} not found in dataset")
                     return None
 
+            # Drop problematic coordinates that cause conflicts when combining variables
+            # Keep only the spatial dimensions (x, y or latitude, longitude)
+            coords_to_drop = []
+            for coord in da.coords:
+                if coord not in ["x", "y", "latitude", "longitude"] and coord not in da.dims:
+                    coords_to_drop.append(coord)
+
+            if coords_to_drop:
+                da = da.drop_vars(coords_to_drop)
+
             # Add metadata
             da.attrs.update({
                 "long_name": var_config["long_name"],
