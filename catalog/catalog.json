@@ -1,0 +1,24 @@
+{
+  "generated": "2025-11-14T06:57:42.791941",
+  "datasets": [
+    {
+      "name": "nam_conus_20251114_00.zarr",
+      "path": "data/nam_conus_20251114_00.zarr",
+      "reference_time": "2025-11-14T00:00:00",
+      "variables": [
+        "d2m",
+        "prmsl",
+        "t2m",
+        "u10",
+        "v10"
+      ],
+      "dimensions": {
+        "time": 1,
+        "step": 9,
+        "y": 428,
+        "x": 614
+      },
+      "size_mb": 26.42306900024414
+    }
+  ]
+}
