@@ -95,7 +95,15 @@ class NAMCONUSRegionJob:
                 {"typeOfLevel": "surface"},  # Surface variables
                 {"typeOfLevel": "meanSea"},  # MSLP
                 {"typeOfLevel": "atmosphereSingleLayer"},  # Integrated variables
+                {"typeOfLevel": "atmosphere"},  # Entire atmosphere variables
+                {"typeOfLevel": "cloudLayer"},  # Cloud layer variables
             ]
+
+            # Add pressure level configurations if configured
+            if self.config.pressure_levels:
+                for pressure in self.config.pressure_levels:
+                    level_configs.append({"typeOfLevel": "isobaricInhPa", "level": pressure})
+
             datasets = {}
 
             for i, filter_keys in enumerate(level_configs):
@@ -221,7 +229,7 @@ class NAMCONUSRegionJob:
         if not datasets_by_level:
             return None
 
-        # Extract configured variables from the appropriate level datasets
+        # Extract surface/single-level variables
         data_vars = {}
         for var_name, var_config in self.config.variables.items():
             # Try to find the variable in each level dataset
@@ -235,6 +243,32 @@ class NAMCONUSRegionJob:
                 data_vars[var_name] = da
             else:
                 logger.warning(f"Variable {var_name} not found in any level dataset")
+
+        # Extract pressure level variables if configured
+        if self.config.pressure_level_variables:
+            pressure_data = {}
+
+            for var_name, var_config in self.config.pressure_level_variables.items():
+                # Collect this variable across all pressure levels
+                pressure_arrays = []
+                pressure_values = []
+
+                for pressure in self.config.pressure_levels:
+                    level_key = f"typeOfLevel=isobaricInhPa_level={pressure}"
+                    if level_key in datasets_by_level:
+                        da = self.extract_variable(datasets_by_level[level_key], var_name, var_config)
+                        if da is not None:
+                            pressure_arrays.append(da)
+                            pressure_values.append(pressure)
+
+                # Combine pressure levels into single variable with pressure dimension
+                if pressure_arrays:
+                    da_combined = xr.concat(pressure_arrays, dim="isobaricInhPa")
+                    da_combined = da_combined.assign_coords({"isobaricInhPa": pressure_values})
+                    data_vars[var_name] = da_combined
+                    logger.debug(f"Extracted {var_name} at {len(pressure_values)} pressure levels")
+                else:
+                    logger.warning(f"Pressure level variable {var_name} not found at any level")
 
         if not data_vars:
             logger.warning(f"No variables extracted for forecast hour {forecast_hour}")
@@ -287,6 +321,12 @@ class NAMCONUSRegionJob:
         ds_combined.attrs.update(
             self.config.get_dataset_attrs(self.reference_time.isoformat())
         )
+
+        # Add coordinate attributes
+        for coord_name in ds_combined.coords:
+            coord_attrs = self.config.get_coord_attrs(coord_name)
+            if coord_attrs:
+                ds_combined[coord_name].attrs.update(coord_attrs)
 
         # Write to Zarr
         logger.info(f"Writing to Zarr: {self.output_path}")

@@ -31,8 +31,14 @@ class NAMCONUSTemplateConfig:
     # Forecast hours to retrieve (0 to 84 in 3-hour steps for efficiency)
     forecast_hours: list[int] = None
 
+    # Pressure levels to extract (in hPa/mb)
+    pressure_levels: list[int] = None
+
     # Variables to extract from GRIB2 files
     variables: dict[str, dict[str, Any]] = None
+
+    # Pressure level variables
+    pressure_level_variables: dict[str, dict[str, Any]] = None
 
     def __post_init__(self):
         """Initialize default values for mutable fields."""
@@ -41,43 +47,203 @@ class NAMCONUSTemplateConfig:
             # For rolling basis, we'll focus on first 12-24 hours
             self.forecast_hours = list(range(0, 25, 3))  # 0, 3, 6, 9, 12, 15, 18, 21, 24
 
+        if self.pressure_levels is None:
+            # Standard pressure levels for atmospheric analysis
+            # 1000mb (surface), 925mb (boundary layer), 850mb (low level)
+            # 700mb (mid-level), 500mb (mid-troposphere), 250mb (jet stream level)
+            self.pressure_levels = [1000, 925, 850, 700, 500, 250]
+
         if self.variables is None:
+            # Surface and near-surface variables
             # Use cfgrib shortName as grib_name (this is what xarray will use as variable names)
             self.variables = {
+                # === Temperature and Moisture ===
                 "t2m": {
-                    "grib_name": "t2m",  # cfgrib shortName
+                    "grib_name": "t2m",
                     "level": "2 m above ground",
                     "long_name": "2 metre temperature",
                     "units": "K",
                     "standard_name": "air_temperature",
                 },
                 "d2m": {
-                    "grib_name": "d2m",  # cfgrib shortName
+                    "grib_name": "d2m",
                     "level": "2 m above ground",
                     "long_name": "2 metre dewpoint temperature",
                     "units": "K",
                     "standard_name": "dew_point_temperature",
                 },
+                "r2": {
+                    "grib_name": "r2",
+                    "level": "2 m above ground",
+                    "long_name": "2 metre relative humidity",
+                    "units": "%",
+                    "standard_name": "relative_humidity",
+                },
+
+                # === Winds ===
                 "u10": {
-                    "grib_name": "u10",  # cfgrib shortName
+                    "grib_name": "u10",
                     "level": "10 m above ground",
                     "long_name": "10 metre U wind component",
                     "units": "m s**-1",
                     "standard_name": "eastward_wind",
                 },
                 "v10": {
-                    "grib_name": "v10",  # cfgrib shortName
+                    "grib_name": "v10",
                     "level": "10 m above ground",
                     "long_name": "10 metre V wind component",
                     "units": "m s**-1",
                     "standard_name": "northward_wind",
                 },
+
+                # === Pressure ===
+                "sp": {
+                    "grib_name": "sp",
+                    "level": "surface",
+                    "long_name": "Surface pressure",
+                    "units": "Pa",
+                    "standard_name": "surface_air_pressure",
+                },
                 "prmsl": {
-                    "grib_name": "prmsl",  # cfgrib shortName
+                    "grib_name": "prmsl",
                     "level": "mean sea level",
                     "long_name": "Mean sea level pressure",
                     "units": "Pa",
                     "standard_name": "air_pressure_at_mean_sea_level",
+                },
+
+                # === Precipitation ===
+                "tp": {
+                    "grib_name": "tp",
+                    "level": "surface",
+                    "long_name": "Total precipitation",
+                    "units": "kg m**-2",
+                    "standard_name": "precipitation_amount",
+                },
+                "prate": {
+                    "grib_name": "prate",
+                    "level": "surface",
+                    "long_name": "Precipitation rate",
+                    "units": "kg m**-2 s**-1",
+                    "standard_name": "precipitation_flux",
+                },
+
+                # === Clouds ===
+                "tcc": {
+                    "grib_name": "tcc",
+                    "level": "entire atmosphere",
+                    "long_name": "Total cloud cover",
+                    "units": "%",
+                    "standard_name": "cloud_area_fraction",
+                },
+                "lcc": {
+                    "grib_name": "lcc",
+                    "level": "low cloud layer",
+                    "long_name": "Low cloud cover",
+                    "units": "%",
+                    "standard_name": "low_cloud_area_fraction",
+                },
+                "mcc": {
+                    "grib_name": "mcc",
+                    "level": "middle cloud layer",
+                    "long_name": "Medium cloud cover",
+                    "units": "%",
+                    "standard_name": "medium_cloud_area_fraction",
+                },
+                "hcc": {
+                    "grib_name": "hcc",
+                    "level": "high cloud layer",
+                    "long_name": "High cloud cover",
+                    "units": "%",
+                    "standard_name": "high_cloud_area_fraction",
+                },
+
+                # === Radiation ===
+                "dswrf": {
+                    "grib_name": "dswrf",
+                    "level": "surface",
+                    "long_name": "Downward shortwave radiation flux",
+                    "units": "W m**-2",
+                    "standard_name": "surface_downwelling_shortwave_flux",
+                },
+                "dlwrf": {
+                    "grib_name": "dlwrf",
+                    "level": "surface",
+                    "long_name": "Downward longwave radiation flux",
+                    "units": "W m**-2",
+                    "standard_name": "surface_downwelling_longwave_flux",
+                },
+
+                # === Convection/Instability ===
+                "cape": {
+                    "grib_name": "cape",
+                    "level": "surface",
+                    "long_name": "Convective available potential energy",
+                    "units": "J kg**-1",
+                    "standard_name": "atmosphere_convective_available_potential_energy",
+                },
+                "cin": {
+                    "grib_name": "cin",
+                    "level": "surface",
+                    "long_name": "Convective inhibition",
+                    "units": "J kg**-1",
+                    "standard_name": "atmosphere_convective_inhibition",
+                },
+            }
+
+        if self.pressure_level_variables is None:
+            # Variables on pressure/isobaric levels
+            self.pressure_level_variables = {
+                # === Temperature ===
+                "t": {
+                    "grib_name": "t",
+                    "long_name": "Temperature",
+                    "units": "K",
+                    "standard_name": "air_temperature",
+                },
+
+                # === Geopotential Height ===
+                "gh": {
+                    "grib_name": "gh",
+                    "long_name": "Geopotential height",
+                    "units": "m",
+                    "standard_name": "geopotential_height",
+                },
+
+                # === Humidity ===
+                "r": {
+                    "grib_name": "r",
+                    "long_name": "Relative humidity",
+                    "units": "%",
+                    "standard_name": "relative_humidity",
+                },
+                "q": {
+                    "grib_name": "q",
+                    "long_name": "Specific humidity",
+                    "units": "kg kg**-1",
+                    "standard_name": "specific_humidity",
+                },
+
+                # === Winds ===
+                "u": {
+                    "grib_name": "u",
+                    "long_name": "U component of wind",
+                    "units": "m s**-1",
+                    "standard_name": "eastward_wind",
+                },
+                "v": {
+                    "grib_name": "v",
+                    "long_name": "V component of wind",
+                    "units": "m s**-1",
+                    "standard_name": "northward_wind",
+                },
+
+                # === Vertical Motion ===
+                "w": {
+                    "grib_name": "w",
+                    "long_name": "Vertical velocity",
+                    "units": "Pa s**-1",
+                    "standard_name": "lagrangian_tendency_of_air_pressure",
                 },
             }
 
@@ -121,6 +287,13 @@ class NAMCONUSTemplateConfig:
                 "long_name": "forecast period",
                 "standard_name": "forecast_period",
                 "units": "hours",
+            },
+            "isobaricInhPa": {
+                "long_name": "pressure",
+                "standard_name": "air_pressure",
+                "units": "hPa",
+                "positive": "down",
+                "axis": "Z",
             },
             "y": {
                 "long_name": "y-coordinate in Lambert Conformal projection",
