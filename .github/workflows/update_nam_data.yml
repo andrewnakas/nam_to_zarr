@@ -1,0 +1,79 @@
+name: Update NAM CONUS Data
+
+on:
+  # Schedule to run 3.5 hours after each NAM cycle for lowest latency
+  # NAM runs at 00, 06, 12, 18 UTC - data usually available by +3 hours
+  schedule:
+    - cron: '30 3 * * *'   # 03:30 UTC - captures 00Z cycle
+    - cron: '30 9 * * *'   # 09:30 UTC - captures 06Z cycle
+    - cron: '30 15 * * *'  # 15:30 UTC - captures 12Z cycle
+    - cron: '30 21 * * *'  # 21:30 UTC - captures 18Z cycle
+
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for cleanup
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeccodes-dev
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e .
+
+      - name: Run NAM data update
+        run: |
+          python -m nam_to_zarr.noaa.nam_conus.forecast.dataset
+
+      - name: Clean up old data (keep last 48 hours)
+        run: |
+          python scripts/cleanup_old_data.py --hours 48
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and push data
+        run: |
+          # Update catalog
+          python scripts/update_catalog.py
+
+          # Add all changes
+          git add data/ catalog.json
+
+          # Check if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            # Commit with timestamp
+            TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
+            git commit -m "Update NAM CONUS data: ${TIMESTAMP}"
+            git push
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload logs as artifact (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs
+          path: "*.log"
+          retention-days: 7

@@ -6,13 +6,17 @@ Automated reformatting of NOAA's NAM (North American Mesoscale) CONUS forecast d
 
 This project automatically downloads NAM CONUS forecast data from NOAA's AWS S3 bucket, converts it from GRIB2 format to Zarr format, and maintains a rolling archive of the most recent forecasts. The entire process runs via GitHub Actions without requiring dedicated infrastructure.
 
+**This system downloads REAL forecast data from NOAA - not synthetic or simulated data.**
+
 ### Key Features
 
-- **Automated Updates**: Runs every 6 hours aligned with NAM update cycles (00, 06, 12, 18 UTC)
-- **Rolling Storage**: Maintains the last 24 hours of forecast data (4 forecast cycles)
+- **Automated Updates**: Runs every 6 hours with low latency (~3.5 hours after each NAM cycle)
+- **Rolling Storage**: Maintains the last **48 hours** of forecast data (8 forecast cycles)
+- **Full 72-Hour Forecasts**: Complete 3-day forecast (25 time steps at 3-hour intervals)
+- **Pressure Level Data**: 6 standard atmospheric levels (1000, 925, 850, 700, 500, 250 mb)
+- **Comprehensive Variables**: Temperature, moisture, winds, pressure, precipitation, clouds, radiation
 - **Cloud-Optimized**: Data stored in Zarr format for efficient cloud access
-- **Comprehensive Variables**: Includes temperature, wind, precipitation, pressure, and more
-- **GitHub-Based**: Fully automated through GitHub Actions
+- **Real NOAA Data**: Direct downloads from NOAA AWS public dataset
 
 ## Data Specifications
 
@@ -20,27 +24,59 @@ This project automatically downloads NAM CONUS forecast data from NOAA's AWS S3 
 - **Grid**: ~2145 × 1377 points at 12 km resolution
 - **Projection**: Lambert Conformal Conic
 - **Update Frequency**: Every 6 hours (00, 06, 12, 18 UTC)
-- **Forecast Length**: 24 hours (0-24 hour forecasts in 3-hour intervals)
-- **Format**: Zarr (compressed with Blosc/LZ4)
+- **Data Latency**: ~3.5 hours (data available by 03:30, 09:30, 15:30, 21:30 UTC)
+- **Forecast Length**: **72 hours** (0-72 hour forecasts in 3-hour intervals)
+- **Retention**: **48 hours** (8 most recent cycles)
+- **Format**: Zarr v3 with automatic compression
 
 ## Variables
 
-The following meteorological variables are extracted from NAM CONUS:
+### Surface & Near-Surface Variables
+
+Essential variables for weather forecasting (note: availability depends on NAM GRIB2 file contents):
+
+| Variable | Description | Level | Units |
+|----------|-------------|-------|-------|
+| **Temperature & Moisture** | | | |
+| `t2m` | 2-metre temperature | 2m above ground | K |
+| `d2m` | 2-metre dewpoint temperature | 2m above ground | K |
+| `r2` | 2-metre relative humidity | 2m above ground | % |
+| **Winds** | | | |
+| `u10` | 10-metre U wind component (eastward) | 10m above ground | m/s |
+| `v10` | 10-metre V wind component (northward) | 10m above ground | m/s |
+| **Pressure** | | | |
+| `sp` | Surface pressure | surface | Pa |
+| `prmsl` | Mean sea level pressure | mean sea level | Pa |
+| **Precipitation** | | | |
+| `tp` | Total precipitation | surface | kg/m² |
+| `acpcp` | Accumulated precipitation | surface | kg/m² |
+| **Cloud Cover** | | | |
+| `tcc` / `tcdc` | Total cloud cover | entire atmosphere | % |
+| `lcc` | Low cloud cover | low cloud layer | % |
+| `mcc` | Medium cloud cover | middle cloud layer | % |
+| `hcc` | High cloud cover | high cloud layer | % |
+| **Radiation** | | | |
+| `dswrf` | Downward shortwave radiation | surface | W/m² |
+| `dlwrf` | Downward longwave radiation | surface | W/m² |
+| **Convection** | | | |
+| `cape` | Convective available potential energy | surface | J/kg |
+| `cin` | Convective inhibition | surface | J/kg |
+
+### Pressure Level Variables
+
+Available at **6 standard pressure levels**: 1000, 925, 850, 700, 500, 250 mb
 
 | Variable | Description | Units |
 |----------|-------------|-------|
-| t2m | 2 metre temperature | K |
-| d2m | 2 metre dewpoint temperature | K |
-| u10 | 10 metre U wind component | m/s |
-| v10 | 10 metre V wind component | m/s |
-| sp | Surface pressure | Pa |
-| msl | Mean sea level pressure | Pa |
-| tp | Total precipitation | kg/m² |
-| gust | Wind gust | m/s |
-| vis | Visibility | m |
-| tcc | Total cloud cover | % |
-| prate | Precipitation rate | kg/m²/s |
-| cape | Convective available potential energy | J/kg |
+| `t` | Temperature | K |
+| `gh` | Geopotential height | m |
+| `r` | Relative humidity | % |
+| `q` | Specific humidity | kg/kg |
+| `u` | U wind component (eastward) | m/s |
+| `v` | V wind component (northward) | m/s |
+| `w` | Vertical velocity (omega) | Pa/s |
+
+**Note**: The actual variables extracted depend on what's available in NAM GRIB2 files. The system logs warnings for variables that are configured but not found in the data.
 
 ## Installation
 
@@ -77,10 +113,12 @@ The repository is configured to automatically update every 6 hours via GitHub Ac
 
 The workflow:
 1. Downloads the latest NAM CONUS GRIB2 files from NOAA AWS S3
-2. Converts to Zarr format
-3. Stores in the `data/` directory
-4. Removes old forecasts (keeps last 4 cycles)
-5. Commits and pushes changes
+2. Extracts surface and pressure level variables using cfgrib
+3. Converts to cloud-optimized Zarr format
+4. Stores in the `data/` directory
+5. Removes old forecasts (keeps last **8 cycles = 48 hours**)
+6. Updates data catalog (catalog.json)
+7. Commits and pushes changes
 
 ### Manual Update
 
@@ -98,16 +136,36 @@ Or use the GitHub Actions UI to manually trigger the workflow.
 import xarray as xr
 
 # Open a Zarr store
-ds = xr.open_zarr("data/nam_conus_20231114_00.zarr", consolidated=True)
+ds = xr.open_zarr("data/nam_conus_20251114_00.zarr", consolidated=True)
 
 # Inspect the dataset
 print(ds)
+print("Variables:", list(ds.data_vars))
+print("Dimensions:", dict(ds.dims))
 
-# Access a variable
-temperature = ds['t2m']
+# Access surface variables
+temperature_2m = ds['t2m']  # Shape: (1, 25, ~1377, ~2145)
+humidity_2m = ds['r2']
 
-# Plot
-temperature.isel(time=0, step=0).plot()
+# Access a specific forecast hour (e.g., 24-hour forecast)
+temp_24h = ds['t2m'].sel(step=24)
+
+# Access pressure level data
+temperature_500mb = ds['t'].sel(isobaricInhPa=500)  # Temperature at 500mb
+wind_u_850mb = ds['u'].sel(isobaricInhPa=850)      # U wind at 850mb
+
+# Get lat/lon coordinates
+lats = ds['latitude'].values
+lons = ds['longitude'].values
+
+# Plot surface temperature at 24-hour forecast
+import matplotlib.pyplot as plt
+ds['t2m'].sel(step=24).squeeze().plot(x='longitude', y='latitude')
+plt.title('NAM 24-Hour Temperature Forecast')
+plt.show()
+
+# Access multiple pressure levels
+temps_multiple_levels = ds['t'].sel(isobaricInhPa=[1000, 850, 500])
 ```
 
 ## Architecture
