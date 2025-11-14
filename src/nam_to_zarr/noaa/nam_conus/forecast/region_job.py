@@ -181,11 +181,14 @@ class NAMCONUSRegionJob:
                     return None
 
             # Drop problematic coordinates that cause conflicts when combining variables
-            # Keep only the spatial dimensions (x, y or latitude, longitude)
-            coords_to_drop = []
-            for coord in da.coords:
-                if coord not in ["x", "y", "latitude", "longitude"] and coord not in da.dims:
-                    coords_to_drop.append(coord)
+            # First, squeeze out any size-1 dimensions (like heightAboveGround)
+            dims_to_squeeze = [dim for dim in da.dims if da.sizes[dim] == 1]
+            if dims_to_squeeze:
+                da = da.squeeze(dims_to_squeeze, drop=True)
+
+            # Then drop any remaining non-spatial coordinates
+            spatial_coords = {"x", "y", "latitude", "longitude"}
+            coords_to_drop = [coord for coord in da.coords if coord not in spatial_coords and coord not in da.dims]
 
             if coords_to_drop:
                 da = da.drop_vars(coords_to_drop)
