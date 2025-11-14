@@ -57,3 +57,4 @@ htmlcov/
 .uv/
 uv.lock
 data/test_*.zarr
+data/
