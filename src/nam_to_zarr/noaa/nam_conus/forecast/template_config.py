@@ -43,9 +43,9 @@ class NAMCONUSTemplateConfig:
     def __post_init__(self):
         """Initialize default values for mutable fields."""
         if self.forecast_hours is None:
-            # Get forecast hours: 0-60 every 3 hours, then 60-84 every 3 hours
-            # For rolling basis, we'll focus on first 12-24 hours
-            self.forecast_hours = list(range(0, 25, 3))  # 0, 3, 6, 9, 12, 15, 18, 21, 24
+            # Get forecast hours: 0-72 every 3 hours for full 3-day forecast
+            # NAM provides forecasts out to 84 hours
+            self.forecast_hours = list(range(0, 73, 3))  # 0, 3, 6, 9, ..., 69, 72
 
         if self.pressure_levels is None:
             # Standard pressure levels for atmospheric analysis
