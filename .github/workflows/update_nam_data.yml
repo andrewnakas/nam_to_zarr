@@ -55,8 +55,22 @@ jobs:
           # Update catalog
           python scripts/update_catalog.py
 
-          # Add all changes
-          git add data/ catalog.json
+          # Debug: Check if data is ignored
+          echo "Checking gitignore status..."
+          git check-ignore -v data/ || echo "data/ is not ignored"
+
+          # Show what files exist
+          echo "Data files:"
+          ls -lah data/ || echo "No data directory"
+
+          # Force add data directory (in case of cached ignore rules)
+          echo "Force adding data directory..."
+          git add -f data/
+          git add -f catalog.json || echo "No catalog.json yet"
+
+          # Show what was staged
+          echo "Staged files:"
+          git diff --staged --name-only
 
           # Check if there are changes
           if git diff --staged --quiet; then
