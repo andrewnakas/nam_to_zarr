@@ -1,5 +1,5 @@
 {
-  "generated": "2025-11-14T08:08:44.301217",
+  "generated": "2025-11-14T19:53:06.836495",
   "datasets": [
     {
       "name": "nam_conus_20251114_00.zarr",
@@ -28,6 +28,34 @@
         "isobaricInhPa": 6
       },
       "size_mb": 494.48596000671387
+    },
+    {
+      "name": "nam_conus_20251114_12.zarr",
+      "path": "data/nam_conus_20251114_12.zarr",
+      "reference_time": "2025-11-14T12:00:00",
+      "variables": [
+        "d2m",
+        "gh",
+        "prmsl",
+        "r",
+        "r2",
+        "t",
+        "t2m",
+        "tcc",
+        "u",
+        "u10",
+        "v",
+        "v10",
+        "w"
+      ],
+      "dimensions": {
+        "time": 1,
+        "step": 25,
+        "y": 428,
+        "x": 614,
+        "isobaricInhPa": 6
+      },
+      "size_mb": 491.2329292297363
     }
   ]
 }
