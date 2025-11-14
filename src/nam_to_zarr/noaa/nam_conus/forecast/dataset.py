@@ -5,7 +5,7 @@ NAM CONUS forecast data in Zarr format on a rolling basis.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -43,7 +43,7 @@ class NAMCONUSForecastDataset:
         Returns:
             datetime object for the latest reference time
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)  # Convert to naive UTC
 
         # NAM runs at 00, 06, 12, 18 UTC
         # Data is typically available ~3 hours after reference time

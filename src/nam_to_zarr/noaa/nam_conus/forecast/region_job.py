@@ -4,11 +4,13 @@ Downloads GRIB2 files from NOAA AWS S3, extracts variables, and writes to Zarr.
 """
 
 import logging
+import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import numpy as np
+import requests
 import xarray as xr
 
 from .template_config import NAMCONUSTemplateConfig
@@ -46,15 +48,16 @@ class NAMCONUSRegionJob:
         Returns:
             URL string for the GRIB2 file
         """
-        # NAM URL format: nam.YYYYMMDD/nam.tCCz.conusnest.hiresf{FH}.tm00.grib2
+        # NAM 12km CONUS URL format: nam.YYYYMMDD/nam.tCCz.awphys{FH}.tm00.grib2
         # where CC is cycle (00, 06, 12, 18) and FH is forecast hour (00, 01, 02, etc.)
+        # NAM 12km goes from 00-84 hours
         date_str = self.reference_time.strftime("%Y%m%d")
         cycle_str = self.reference_time.strftime("%H")
         fh_str = f"{forecast_hour:02d}"
 
         url = (
             f"{self.base_url}/nam.{date_str}/"
-            f"nam.t{cycle_str}z.conusnest.hiresf{fh_str}.tm00.grib2"
+            f"nam.t{cycle_str}z.awphys{fh_str}.tm00.grib2"
         )
         return url
 
@@ -68,22 +71,55 @@ class NAMCONUSRegionJob:
             xarray Dataset with the GRIB2 data, or None if download fails
         """
         url = self.get_grib_url(forecast_hour)
-        logger.info(f"Reading GRIB2 file: {url}")
+        logger.info(f"Downloading GRIB2 file: {url}")
 
+        # Download to temporary file
+        temp_file = None
         try:
-            # Use xarray with cfgrib engine to read GRIB2 directly from URL
-            # Note: This requires cfgrib and eccodes to be installed
+            # Try to download the file
+            response = requests.get(url, timeout=60)
+            response.raise_for_status()
+
+            # Save to temporary file
+            with tempfile.NamedTemporaryFile(suffix=".grib2", delete=False) as f:
+                f.write(response.content)
+                temp_file = f.name
+
+            logger.info(f"Downloaded to {temp_file}, reading with cfgrib...")
+
+            # Read with cfgrib
             ds = xr.open_dataset(
-                url,
+                temp_file,
                 engine="cfgrib",
                 backend_kwargs={
                     "indexpath": "",  # Disable index file creation
                 },
             )
             return ds
+
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                logger.error(f"File not found (404): {url}")
+                logger.info("This might indicate:")
+                logger.info("  1. The forecast cycle is not yet available")
+                logger.info("  2. The URL structure has changed")
+                logger.info("  3. The file naming convention is different")
+            else:
+                logger.error(f"HTTP error downloading {url}: {e}")
+            return None
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Network error downloading {url}: {e}")
+            return None
         except Exception as e:
             logger.error(f"Failed to read GRIB2 file {url}: {e}")
             return None
+        finally:
+            # Clean up temporary file
+            if temp_file and Path(temp_file).exists():
+                try:
+                    Path(temp_file).unlink()
+                except Exception:
+                    pass
 
     def extract_variable(
         self, ds: xr.Dataset, var_name: str, var_config: dict[str, Any]
