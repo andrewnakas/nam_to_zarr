@@ -42,90 +42,42 @@ class NAMCONUSTemplateConfig:
             self.forecast_hours = list(range(0, 25, 3))  # 0, 3, 6, 9, 12, 15, 18, 21, 24
 
         if self.variables is None:
+            # Use cfgrib shortName as grib_name (this is what xarray will use as variable names)
             self.variables = {
                 "t2m": {
-                    "grib_name": "TMP",
+                    "grib_name": "t2m",  # cfgrib shortName
                     "level": "2 m above ground",
                     "long_name": "2 metre temperature",
                     "units": "K",
                     "standard_name": "air_temperature",
                 },
                 "d2m": {
-                    "grib_name": "DPT",
+                    "grib_name": "d2m",  # cfgrib shortName
                     "level": "2 m above ground",
                     "long_name": "2 metre dewpoint temperature",
                     "units": "K",
                     "standard_name": "dew_point_temperature",
                 },
                 "u10": {
-                    "grib_name": "UGRD",
+                    "grib_name": "u10",  # cfgrib shortName
                     "level": "10 m above ground",
                     "long_name": "10 metre U wind component",
                     "units": "m s**-1",
                     "standard_name": "eastward_wind",
                 },
                 "v10": {
-                    "grib_name": "VGRD",
+                    "grib_name": "v10",  # cfgrib shortName
                     "level": "10 m above ground",
                     "long_name": "10 metre V wind component",
                     "units": "m s**-1",
                     "standard_name": "northward_wind",
                 },
-                "sp": {
-                    "grib_name": "PRES",
-                    "level": "surface",
-                    "long_name": "Surface pressure",
-                    "units": "Pa",
-                    "standard_name": "surface_air_pressure",
-                },
-                "msl": {
-                    "grib_name": "PRMSL",
+                "prmsl": {
+                    "grib_name": "prmsl",  # cfgrib shortName
                     "level": "mean sea level",
                     "long_name": "Mean sea level pressure",
                     "units": "Pa",
                     "standard_name": "air_pressure_at_mean_sea_level",
-                },
-                "tp": {
-                    "grib_name": "APCP",
-                    "level": "surface",
-                    "long_name": "Total precipitation",
-                    "units": "kg m**-2",
-                    "standard_name": "precipitation_amount",
-                },
-                "gust": {
-                    "grib_name": "GUST",
-                    "level": "surface",
-                    "long_name": "Wind gust",
-                    "units": "m s**-1",
-                    "standard_name": "wind_speed_of_gust",
-                },
-                "vis": {
-                    "grib_name": "VIS",
-                    "level": "surface",
-                    "long_name": "Visibility",
-                    "units": "m",
-                    "standard_name": "visibility_in_air",
-                },
-                "tcc": {
-                    "grib_name": "TCDC",
-                    "level": "entire atmosphere",
-                    "long_name": "Total cloud cover",
-                    "units": "%",
-                    "standard_name": "cloud_area_fraction",
-                },
-                "prate": {
-                    "grib_name": "PRATE",
-                    "level": "surface",
-                    "long_name": "Precipitation rate",
-                    "units": "kg m**-2 s**-1",
-                    "standard_name": "precipitation_flux",
-                },
-                "cape": {
-                    "grib_name": "CAPE",
-                    "level": "surface",
-                    "long_name": "Convective available potential energy",
-                    "units": "J kg**-1",
-                    "standard_name": "atmosphere_convective_available_potential_energy",
                 },
             }
 

@@ -12,6 +12,7 @@ from typing import Any
 import numpy as np
 import requests
 import xarray as xr
+from numcodecs import Blosc
 
 from .template_config import NAMCONUSTemplateConfig
 
@@ -87,34 +88,41 @@ class NAMCONUSRegionJob:
 
             logger.info(f"Downloaded to {temp_file}, reading with cfgrib...")
 
-            # NAM GRIB2 files contain multiple level types, we need to read them separately
-            # We need: heightAboveGround (2m, 10m), surface, and meanSea
-            level_types = ["heightAboveGround", "surface", "meanSea", "atmosphereSingleLayer"]
+            # NAM GRIB2 files contain multiple level types and heights
+            # We need to read specific combinations to avoid coordinate conflicts
+            level_configs = [
+                {"typeOfLevel": "heightAboveGround", "level": 2},  # 2m temperature, dewpoint
+                {"typeOfLevel": "heightAboveGround", "level": 10},  # 10m winds
+                {"typeOfLevel": "surface"},  # Surface variables
+                {"typeOfLevel": "meanSea"},  # MSLP
+                {"typeOfLevel": "atmosphereSingleLayer"},  # Integrated variables
+            ]
             datasets = {}
 
-            for level_type in level_types:
+            for i, filter_keys in enumerate(level_configs):
+                config_name = "_".join(f"{k}={v}" for k, v in filter_keys.items())
                 try:
                     ds = xr.open_dataset(
                         temp_file,
                         engine="cfgrib",
                         backend_kwargs={
-                            "filter_by_keys": {"typeOfLevel": level_type},
+                            "filter_by_keys": filter_keys,
                             "indexpath": "",  # Disable index file creation
                         },
                     )
                     # Load data into memory before we delete the temp file
                     ds.load()
-                    datasets[level_type] = ds
-                    logger.debug(f"Read {len(ds.data_vars)} variables from {level_type}")
+                    datasets[config_name] = ds
+                    logger.debug(f"Read {len(ds.data_vars)} variables from {config_name}")
                 except Exception as e:
-                    logger.debug(f"No data for level type {level_type}: {e}")
+                    logger.debug(f"No data for {config_name}: {e}")
                     continue
 
             if not datasets:
                 logger.error("No datasets could be read from GRIB file")
                 return {}
 
-            logger.info(f"Successfully loaded {len(datasets)} level types into memory")
+            logger.info(f"Successfully loaded {len(datasets)} level configurations into memory")
             return datasets
 
         except requests.exceptions.HTTPError as e:
@@ -275,16 +283,10 @@ class NAMCONUSRegionJob:
             self.output_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Write to Zarr with compression
+            compressor = Blosc(cname="lz4", clevel=5, shuffle=Blosc.SHUFFLE)
             encoding = {}
             for var in ds_combined.data_vars:
-                encoding[var] = {
-                    "compressor": {
-                        "id": "blosc",
-                        "cname": "lz4",
-                        "clevel": 5,
-                        "shuffle": 1,
-                    }
-                }
+                encoding[var] = {"compressor": compressor}
 
             ds_combined.to_zarr(
                 self.output_path,
