@@ -1,10 +1,10 @@
 {
-  "generated": "2025-11-15T09:45:36.234378",
+  "generated": "2025-11-15T15:46:26.780730",
   "datasets": [
     {
-      "name": "nam_conus_20251115_00.zarr",
-      "path": "data/nam_conus_20251115_00.zarr",
-      "reference_time": "2025-11-15T00:00:00",
+      "name": "nam_conus_20251115_06.zarr",
+      "path": "data/nam_conus_20251115_06.zarr",
+      "reference_time": "2025-11-15T06:00:00",
       "variables": [
         "cape",
         "cin",
@@ -33,7 +33,7 @@
         "x": 614,
         "isobaricInhPa": 6
       },
-      "size_mb": 1123.6153841018677
+      "size_mb": 1119.002269744873
     }
   ]
 }
