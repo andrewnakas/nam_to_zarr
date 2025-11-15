@@ -73,6 +73,8 @@ jobs:
             echo "No catalog changes to commit"
           else
             git commit -m "Update data catalog"
+            # Pull with rebase to avoid conflicts, then push
+            git pull --rebase origin ${{ github.ref_name }}
             git push
           fi
         continue-on-error: true
