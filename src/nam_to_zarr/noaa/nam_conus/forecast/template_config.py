@@ -43,9 +43,12 @@ class NAMCONUSTemplateConfig:
     def __post_init__(self):
         """Initialize default values for mutable fields."""
         if self.forecast_hours is None:
-            # Get forecast hours: 0-72 every 3 hours for full 3-day forecast
-            # NAM provides forecasts out to 84 hours
-            self.forecast_hours = list(range(0, 73, 3))  # 0, 3, 6, 9, ..., 69, 72
+            # NAM CONUS provides full 84-hour (3.5 day) forecast:
+            # - Hourly forecasts for first 36 hours (0-36)
+            # - 3-hourly forecasts from 39-84 hours
+            hourly_hours = list(range(0, 37))  # 0, 1, 2, ..., 35, 36
+            three_hourly_hours = list(range(39, 85, 3))  # 39, 42, 45, ..., 81, 84
+            self.forecast_hours = hourly_hours + three_hourly_hours
 
         if self.pressure_levels is None:
             # Standard pressure levels for atmospheric analysis
@@ -120,54 +123,26 @@ class NAMCONUSTemplateConfig:
                     "units": "kg m**-2",
                     "standard_name": "precipitation_amount",
                 },
-                "prate": {
-                    "grib_name": "prate",
-                    "level": "surface",
-                    "long_name": "Precipitation rate",
-                    "units": "kg m**-2 s**-1",
-                    "standard_name": "precipitation_flux",
-                },
 
                 # === Clouds ===
                 "tcc": {
                     "grib_name": "tcc",
-                    "level": "entire atmosphere",
+                    "level": "atmosphere single layer",
                     "long_name": "Total cloud cover",
                     "units": "%",
                     "standard_name": "cloud_area_fraction",
                 },
-                "lcc": {
-                    "grib_name": "lcc",
-                    "level": "low cloud layer",
-                    "long_name": "Low cloud cover",
-                    "units": "%",
-                    "standard_name": "low_cloud_area_fraction",
-                },
-                "mcc": {
-                    "grib_name": "mcc",
-                    "level": "middle cloud layer",
-                    "long_name": "Medium cloud cover",
-                    "units": "%",
-                    "standard_name": "medium_cloud_area_fraction",
-                },
-                "hcc": {
-                    "grib_name": "hcc",
-                    "level": "high cloud layer",
-                    "long_name": "High cloud cover",
-                    "units": "%",
-                    "standard_name": "high_cloud_area_fraction",
-                },
 
                 # === Radiation ===
                 "dswrf": {
-                    "grib_name": "dswrf",
+                    "grib_name": "sdswrf",
                     "level": "surface",
                     "long_name": "Downward shortwave radiation flux",
                     "units": "W m**-2",
                     "standard_name": "surface_downwelling_shortwave_flux",
                 },
                 "dlwrf": {
-                    "grib_name": "dlwrf",
+                    "grib_name": "sdlwrf",
                     "level": "surface",
                     "long_name": "Downward longwave radiation flux",
                     "units": "W m**-2",
@@ -216,12 +191,6 @@ class NAMCONUSTemplateConfig:
                     "long_name": "Relative humidity",
                     "units": "%",
                     "standard_name": "relative_humidity",
-                },
-                "q": {
-                    "grib_name": "q",
-                    "long_name": "Specific humidity",
-                    "units": "kg kg**-1",
-                    "standard_name": "specific_humidity",
                 },
 
                 # === Winds ===

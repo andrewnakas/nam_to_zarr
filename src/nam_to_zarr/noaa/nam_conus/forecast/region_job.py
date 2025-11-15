@@ -92,11 +92,10 @@ class NAMCONUSRegionJob:
             level_configs = [
                 {"typeOfLevel": "heightAboveGround", "level": 2},  # 2m temperature, dewpoint
                 {"typeOfLevel": "heightAboveGround", "level": 10},  # 10m winds
-                {"typeOfLevel": "surface"},  # Surface variables
+                {"typeOfLevel": "surface", "stepType": "instant"},  # Surface variables (instantaneous)
+                {"typeOfLevel": "surface", "stepType": "accum"},  # Surface variables (accumulated)
                 {"typeOfLevel": "meanSea"},  # MSLP
                 {"typeOfLevel": "atmosphereSingleLayer"},  # Integrated variables
-                {"typeOfLevel": "atmosphere"},  # Entire atmosphere variables
-                {"typeOfLevel": "cloudLayer"},  # Cloud layer variables
             ]
 
             # Add pressure level configurations if configured
@@ -184,7 +183,7 @@ class NAMCONUSRegionJob:
                         da = ds[name]
                         break
                 else:
-                    logger.warning(f"Variable {grib_name} not found in dataset")
+                    logger.debug(f"Variable {grib_name} not found in dataset")
                     return None
 
             # Drop problematic coordinates that cause conflicts when combining variables

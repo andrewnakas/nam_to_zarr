@@ -53,22 +53,9 @@ jobs:
         env:
           PYTHONUNBUFFERED: 1
 
-      - name: Commit and push data
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Add new/updated zarr stores
-          git add data/
-
-          # Check if there are changes
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
-            git commit -m "Update NAM CONUS data: ${TIMESTAMP}"
-            git push
-          fi
+      # Note: Data files are stored locally and not committed to git
+      # They are ignored via .gitignore due to their large size
+      # Consider uploading to S3 or another storage service if needed
 
       - name: Generate data catalog
         run: |

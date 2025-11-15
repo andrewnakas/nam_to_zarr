@@ -150,7 +150,7 @@ def main():
     # Create and run dataset manager
     dataset = NAMCONUSForecastDataset(
         data_dir="data",
-        keep_last_n=4,  # Keep last 24 hours of data (4 runs at 6-hour intervals)
+        keep_last_n=1,  # Keep only the most recent forecast dataset
     )
 
     success = dataset.update()
