@@ -304,6 +304,7 @@ MIT License - See [LICENSE](LICENSE) file for details.
 - **NOAA/NCEP** for providing NAM data through the Big Data Program
 - **AWS** for hosting NOAA data on S3
 - **Zarr** and **xarray** communities for excellent cloud-native data tools
+- **[dynamical.org](https://dynamical.org)** for inspiration on cloud-optimized weather data catalogs and best practices
 - Inspired by cloud-optimized weather data initiatives
 
 ## Citation
