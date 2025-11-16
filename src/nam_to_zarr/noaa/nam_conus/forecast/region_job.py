@@ -13,6 +13,7 @@ import numpy as np
 import requests
 import xarray as xr
 
+from .projection import add_projection_coordinates, extract_projection_from_grib
 from .template_config import NAMCONUSTemplateConfig
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ class NAMCONUSRegionJob:
         self.base_url = "https://noaa-nam-pds.s3.amazonaws.com"
 
     def get_grib_url(self, forecast_hour: int) -> str:
-        """Construct URL for NAM CONUS GRIB2 file.
+        """Construct URL for NAM CONUS Nest GRIB2 file.
 
         Args:
             forecast_hour: Forecast hour to retrieve
@@ -48,27 +49,33 @@ class NAMCONUSRegionJob:
         Returns:
             URL string for the GRIB2 file
         """
-        # NAM 12km CONUS URL format: nam.YYYYMMDD/nam.tCCz.awphys{FH}.tm00.grib2
+        # NAM 3km CONUS Nest URL format: nam.YYYYMMDD/nam.tCCz.conusnest.hiresfFH.tm00.grib2
         # where CC is cycle (00, 06, 12, 18) and FH is forecast hour (00, 01, 02, etc.)
-        # NAM 12km goes from 00-84 hours
+        # NAM CONUS Nest 3km goes from 00-60 hours (hourly)
+        #
+        # Previous 12km format was: nam.tCCz.awphys{FH}.tm00.grib2
         date_str = self.reference_time.strftime("%Y%m%d")
         cycle_str = self.reference_time.strftime("%H")
         fh_str = f"{forecast_hour:02d}"
 
         url = (
             f"{self.base_url}/nam.{date_str}/"
-            f"nam.t{cycle_str}z.awphys{fh_str}.tm00.grib2"
+            f"nam.t{cycle_str}z.conusnest.hiresf{fh_str}.tm00.grib2"
         )
         return url
 
-    def download_and_read_grib(self, forecast_hour: int) -> dict[str, xr.Dataset]:
+    def download_and_read_grib(
+        self, forecast_hour: int
+    ) -> tuple[dict[str, xr.Dataset], str | None]:
         """Download and read a GRIB2 file, returning datasets by level type.
 
         Args:
             forecast_hour: Forecast hour to retrieve
 
         Returns:
-            Dictionary mapping level types to xarray Datasets, or empty dict if download fails
+            Tuple of (datasets_dict, grib_file_path):
+                - Dictionary mapping level types to xarray Datasets (empty if download fails)
+                - Path to temporary GRIB file (None if download fails)
         """
         url = self.get_grib_url(forecast_hour)
         logger.info(f"Downloading GRIB2 file: {url}")
@@ -126,10 +133,11 @@ class NAMCONUSRegionJob:
 
             if not datasets:
                 logger.error("No datasets could be read from GRIB file")
-                return {}
+                return {}, None
 
             logger.info(f"Successfully loaded {len(datasets)} level configurations into memory")
-            return datasets
+            # Return datasets and the temp file path (caller is responsible for cleanup)
+            return datasets, temp_file
 
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 404:
@@ -140,20 +148,29 @@ class NAMCONUSRegionJob:
                 logger.info("  3. The file naming convention is different")
             else:
                 logger.error(f"HTTP error downloading {url}: {e}")
-            return {}
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Network error downloading {url}: {e}")
-            return {}
-        except Exception as e:
-            logger.error(f"Failed to read GRIB2 file {url}: {e}")
-            return {}
-        finally:
-            # Clean up temporary file
+            # Clean up on error
             if temp_file and Path(temp_file).exists():
                 try:
                     Path(temp_file).unlink()
                 except Exception:
                     pass
+            return {}, None
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Network error downloading {url}: {e}")
+            if temp_file and Path(temp_file).exists():
+                try:
+                    Path(temp_file).unlink()
+                except Exception:
+                    pass
+            return {}, None
+        except Exception as e:
+            logger.error(f"Failed to read GRIB2 file {url}: {e}")
+            if temp_file and Path(temp_file).exists():
+                try:
+                    Path(temp_file).unlink()
+                except Exception:
+                    pass
+            return {}, None
 
     def extract_variable(
         self, ds: xr.Dataset, var_name: str, var_config: dict[str, Any]
@@ -223,10 +240,22 @@ class NAMCONUSRegionJob:
         """
         logger.info(f"Processing forecast hour {forecast_hour}")
 
-        # Download and read GRIB2 file (returns dict of datasets by level type)
-        datasets_by_level = self.download_and_read_grib(forecast_hour)
+        # Download and read GRIB2 file (returns dict of datasets by level type and temp file)
+        datasets_by_level, grib_file = self.download_and_read_grib(forecast_hour)
         if not datasets_by_level:
             return None
+
+        # Extract projection parameters from GRIB file (for first forecast hour only)
+        proj_params = None
+        if forecast_hour == self.config.forecast_hours[0]:
+            proj_params = extract_projection_from_grib(
+                next(iter(datasets_by_level.values())), grib_file
+            )
+            # Store for later use with other forecast hours
+            self._proj_params = proj_params
+        elif hasattr(self, '_proj_params'):
+            # Reuse projection params from first forecast hour
+            proj_params = self._proj_params
 
         # Extract surface/single-level variables
         data_vars = {}
@@ -271,10 +300,24 @@ class NAMCONUSRegionJob:
 
         if not data_vars:
             logger.warning(f"No variables extracted for forecast hour {forecast_hour}")
+            # Clean up temp file before returning
+            if grib_file and Path(grib_file).exists():
+                try:
+                    Path(grib_file).unlink()
+                except Exception:
+                    pass
             return None
 
         # Create dataset with extracted variables
         ds = xr.Dataset(data_vars)
+
+        # Add projection coordinates if we have projection parameters
+        if proj_params is not None:
+            try:
+                ds = add_projection_coordinates(ds, proj_params)
+            except Exception as e:
+                logger.warning(f"Failed to add projection coordinates: {e}")
+                # Continue without projection coordinates
 
         # Add forecast hour as coordinate
         ds = ds.expand_dims({"step": [forecast_hour]})
@@ -282,6 +325,14 @@ class NAMCONUSRegionJob:
         # Close the GRIB datasets
         for ds_grib in datasets_by_level.values():
             ds_grib.close()
+
+        # Clean up temporary GRIB file
+        if grib_file and Path(grib_file).exists():
+            try:
+                Path(grib_file).unlink()
+                logger.debug(f"Cleaned up temporary file: {grib_file}")
+            except Exception as e:
+                logger.warning(f"Failed to clean up temp file {grib_file}: {e}")
 
         return ds
 

@@ -1,18 +1,26 @@
-# NOAA NAM CONUS Forecast
+# NOAA NAM CONUS Nest Forecast
 
-High-resolution weather forecasts from NOAA's North American Mesoscale (NAM) model, automatically reformatted to cloud-optimized Zarr format and updated every 6 hours.
+High-resolution weather forecasts from NOAA's North American Mesoscale (NAM) model CONUS Nest, automatically reformatted to cloud-optimized Zarr format with projection coordinates and updated every 6 hours.
 
 ## Dataset Overview
 
-**Model**: NAM CONUS 12km - North American Mesoscale Model
-**Coverage**: Continental United States at 12km resolution (~2145 × 1377 grid points)
-**Projection**: Lambert Conformal Conic
+**Model**: NAM CONUS Nest 3km - North American Mesoscale Model (High-Resolution Nested Grid)
+**Coverage**: Continental United States at 3km resolution (1799 × 1059 grid points)
+**Projection**: Lambert Conformal Conic with x/y coordinates in meters
 **Updates**: Every 6 hours (00, 06, 12, 18 UTC)
-**Forecast Range**: 0-84 hours (3.5 days)
+**Forecast Range**: 0-60 hours (2.5 days)
 
-- **Hourly** forecasts for first 36 hours (short-range)
-- **3-hourly** forecasts from 39-84 hours (medium-range)
-- **53 total forecast steps** per cycle
+- **Hourly** forecasts for all 61 forecast hours (0-60)
+- Higher spatial resolution (3km vs 12km) for better local detail
+- **61 total forecast steps** per cycle
+- Projection coordinates (x, y) provided in meters for geospatial operations
+
+### Key Features
+
+✨ **Projection Coordinates**: X/Y coordinates in meters following Lambert Conformal Conic projection
+✨ **CF-Compliant**: Includes grid_mapping variable with full projection specification
+✨ **Cloud-Optimized**: Zarr format with chunking for efficient access
+✨ **Higher Resolution**: 3km grid spacing vs 12km parent domain
 
 ## Variables Available
 
@@ -82,29 +90,38 @@ plt.show()
 
 ```python
 Dimensions:
-  time: 1           # Reference time (forecast initialization)
-  step: 53          # Forecast hours (0-36 hourly, 39-84 3-hourly)
-  y: 428            # Latitude grid points
-  x: 614            # Longitude grid points
-  isobaricInhPa: 6  # Pressure levels
+  time: 1            # Reference time (forecast initialization)
+  step: 61           # Forecast hours (0-60 hourly)
+  y: 1059            # Y-axis grid points (north-south)
+  x: 1799            # X-axis grid points (east-west)
+  isobaricInhPa: 6   # Pressure levels
 
 Coordinates:
   time: Forecast reference time
   step: Forecast period (hours since reference time)
-  latitude: 2D array of latitudes
-  longitude: 2D array of longitudes
+  x: 1D array of x-coordinates in projection meters [~-2.7M to 2.7M m]
+  y: 1D array of y-coordinates in projection meters [~-1.6M to 1.6M m]
+  latitude: 2D array of latitudes (for reference)
+  longitude: 2D array of longitudes (for reference)
   isobaricInhPa: Pressure levels [1000, 925, 850, 700, 500, 250] hPa
+
+Grid Mapping:
+  lambert_conformal: Projection metadata (CF-compliant)
+    - standard_parallel: [38.5°, 38.5°]
+    - longitude_of_central_meridian: -97.5°
+    - latitude_of_projection_origin: 38.5°
 ```
 
 ## Automated Updates
 
 This repository uses GitHub Actions to automatically:
 
-1. Download latest NAM CONUS forecasts from NOAA AWS S3 (`s3://noaa-nam-pds/`)
-2. Extract GRIB2 data using cfgrib
-3. Convert to Zarr format with compression
-4. Update the data catalog
-5. Maintain only the most recent forecast (rolling update)
+1. Download latest NAM CONUS Nest 3km forecasts from NOAA AWS S3 (`s3://noaa-nam-pds/`)
+2. Extract GRIB2 data using cfgrib and eccodes
+3. Compute Lambert Conformal Conic projection coordinates (x/y in meters) using pyproj
+4. Convert to Zarr format with compression and CF-compliant metadata
+5. Update the data catalog
+6. Maintain only the most recent forecast (rolling update)
 
 **Schedule**: Runs at 03:30, 09:30, 15:30, 21:30 UTC (3.5 hours after each NAM cycle to ensure data availability)
 
@@ -113,13 +130,43 @@ This repository uses GitHub Actions to automatically:
 ### Data Format
 
 - **Storage**: Zarr format with automatic compression
-- **Coordinate System**: Lambert Conformal Conic projection
-- **Grid Spacing**: 12 km
+- **Coordinate System**: Lambert Conformal Conic projection with x/y in meters
+- **Grid Spacing**: 3 km (3000 m)
+- **Grid Size**: 1799 × 1059 points (~1.9 million grid cells)
 - **File Naming**: `nam_conus_YYYYMMDD_HH.zarr` (e.g., `nam_conus_20231114_12.zarr`)
+- **Projection**: CF-compliant grid_mapping variable included
+
+### Projection Coordinates
+
+This dataset provides x/y coordinates in meters following the Lambert Conformal Conic projection, similar to NBM data. This enables:
+
+- **Direct geospatial operations** without coordinate transformation
+- **Consistent coordinate system** across different forecast models
+- **CF-1.8 compliance** with grid_mapping metadata
+- **Easy integration** with GIS tools and libraries (rasterio, rioxarray, etc.)
+
+Example using projection coordinates:
+
+```python
+import xarray as xr
+
+ds = xr.open_zarr("data/nam_conus_20231114_12.zarr", consolidated=True)
+
+# Access data using projection coordinates (meters)
+# Select a 100km × 100km box around a point
+x_center = 500000  # meters
+y_center = 1000000  # meters
+box_size = 50000   # ±50km = 100km box
+
+subset = ds.sel(
+    x=slice(x_center - box_size, x_center + box_size),
+    y=slice(y_center - box_size, y_center + box_size)
+)
+```
 
 ### Compression
 
-Data is stored with Zarr's default compression for efficient storage and fast cloud access. Typical dataset size: ~500 MB per forecast cycle (compressed).
+Data is stored with Zarr's default compression for efficient storage and fast cloud access. Typical dataset size: ~2-3 GB per forecast cycle (compressed).
 
 ## Installation
 
@@ -157,10 +204,11 @@ python -m nam_to_zarr.noaa.nam_conus.forecast.dataset
 Edit `src/nam_to_zarr/noaa/nam_conus/forecast/template_config.py`:
 
 ```python
-# Current configuration:
-hourly_hours = list(range(0, 37))        # Hours 0-36 (hourly)
-three_hourly_hours = list(range(39, 85, 3))  # Hours 39-84 (3-hourly)
-self.forecast_hours = hourly_hours + three_hourly_hours
+# Current configuration (3km CONUS Nest):
+self.forecast_hours = list(range(0, 61))  # Hours 0-60 (hourly)
+
+# For subset (e.g., first 24 hours only):
+self.forecast_hours = list(range(0, 25))  # Hours 0-24
 ```
 
 ### Adjust Storage Retention
