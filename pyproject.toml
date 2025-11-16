@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "nam-to-zarr"
 version = "0.1.0"
-description = "Automated reformatting of NOAA NAM CONUS forecast data to Zarr format"
+description = "Automated reformatting of NOAA NAM CONUS Nest (3km) forecast data to Zarr format with projection coordinates"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
@@ -28,6 +28,7 @@ dependencies = [
     "zarr>=2.16.0",
     "cfgrib>=0.9.10",
     "eccodes>=1.6.0",
+    "pyproj>=3.6.0",
     "dask>=2024.1.0",
     "netcdf4>=1.6.5",
     "fsspec>=2024.1.0",
@@ -94,6 +95,7 @@ module = [
     "cfgrib.*",
     "eccodes.*",
     "zarr.*",
+    "pyproj.*",
 ]
 ignore_missing_imports = true
 

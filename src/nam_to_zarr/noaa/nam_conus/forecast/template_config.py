@@ -12,15 +12,20 @@ from typing import Any
 class NAMCONUSTemplateConfig:
     """Configuration template for NAM CONUS forecast dataset.
 
-    NAM CONUS uses a Lambert Conformal Conic projection with:
-    - Grid: ~2145 x 1377 points (may vary slightly by data version)
-    - Resolution: 12 km
+    NAM CONUS Nest (3km) uses a Lambert Conformal Conic projection with:
+    - Grid: 1799 x 1059 points
+    - Resolution: 3 km
     - Updates: 4 times daily (00, 06, 12, 18 UTC)
+    - Forecast length: Up to 60 hours (hourly)
+
+    Previous 12km configuration:
+    - Grid: 614 x 428 points
+    - Resolution: 12 km
     - Forecast length: Up to 84 hours
     """
 
-    # Grid dimensions (approximate - will be determined from actual data)
-    grid_shape: tuple[int, int] = (1377, 2145)  # (y, x)
+    # Grid dimensions for 3km CONUS nest
+    grid_shape: tuple[int, int] = (1059, 1799)  # (y, x)
 
     # Projection information
     projection: str = "Lambert_Conformal"
@@ -43,12 +48,11 @@ class NAMCONUSTemplateConfig:
     def __post_init__(self):
         """Initialize default values for mutable fields."""
         if self.forecast_hours is None:
-            # NAM CONUS provides full 84-hour (3.5 day) forecast:
+            # NAM CONUS Nest (3km) provides 60-hour forecast with hourly output (0-60)
+            # Previous 12km configuration provided:
             # - Hourly forecasts for first 36 hours (0-36)
             # - 3-hourly forecasts from 39-84 hours
-            hourly_hours = list(range(0, 37))  # 0, 1, 2, ..., 35, 36
-            three_hourly_hours = list(range(39, 85, 3))  # 39, 42, 45, ..., 81, 84
-            self.forecast_hours = hourly_hours + three_hourly_hours
+            self.forecast_hours = list(range(0, 61))  # 0, 1, 2, ..., 59, 60
 
         if self.pressure_levels is None:
             # Standard pressure levels for atmospheric analysis
@@ -226,15 +230,15 @@ class NAMCONUSTemplateConfig:
             Dictionary of global attributes
         """
         return {
-            "title": "NAM CONUS Forecast",
+            "title": "NAM CONUS Nest Forecast",
             "institution": "NOAA/NCEP",
-            "source": "NAM CONUS 12km",
+            "source": "NAM CONUS Nest 3km",
             "references": "https://www.emc.ncep.noaa.gov/index.php?branch=NAM",
-            "comment": "NAM CONUS forecast data reformatted to Zarr",
+            "comment": "NAM CONUS Nest forecast data reformatted to Zarr with projection coordinates",
             "Conventions": "CF-1.8",
             "reference_time": reference_time,
             "projection": self.projection,
-            "grid_resolution": "12 km",
+            "grid_resolution": "3 km",
             "update_frequency": f"{self.update_interval} hours",
         }
 
