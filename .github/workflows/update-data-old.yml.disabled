@@ -1,4 +1,13 @@
-name: Update NAM CONUS Data
+# DISABLED: This workflow has been replaced by update-data-chunked.yml
+#
+# This monolithic workflow processes all 61 forecast hours in a single job,
+# which takes >25 minutes and can hit timeouts. The chunked version splits
+# processing into 3 parallel jobs (0-20, 21-40, 41-60 hours) that each run
+# under 20 minutes, then merges the results.
+#
+# To re-enable this workflow, remove the .disabled extension from the filename.
+
+name: Update NAM CONUS Data (OLD - DISABLED)
 
 on:
   # Run every 6 hours (aligned with NAM update cycles: 00, 06, 12, 18 UTC)

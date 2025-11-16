@@ -1,0 +1,221 @@
+name: Update NAM CONUS Data (Chunked)
+
+on:
+  # Run every 6 hours (aligned with NAM update cycles: 00, 06, 12, 18 UTC)
+  # Adding 3.5 hour offset to ensure data is available
+  schedule:
+    - cron: "30 3,9,15,21 * * *"  # 03:30, 09:30, 15:30, 21:30 UTC
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+  # Run on push to main and claude branches (for testing)
+  push:
+    branches:
+      - main
+      - claude/**
+
+permissions:
+  contents: write
+
+jobs:
+  # Process forecast hours 0-20 (21 hours)
+  process-chunk-1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeccodes-dev libgeos-dev
+
+      - name: Install Python dependencies
+        run: |
+          uv pip install --system -e .
+
+      - name: Process chunk 1 (hours 0-20)
+        run: |
+          python scripts/process_chunk.py 0 20 1
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Upload chunk 1
+        uses: actions/upload-artifact@v4
+        with:
+          name: chunk-1
+          path: data/nam_conus_*_chunk1.zarr/
+          retention-days: 1
+
+  # Process forecast hours 21-40 (20 hours)
+  process-chunk-2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeccodes-dev libgeos-dev
+
+      - name: Install Python dependencies
+        run: |
+          uv pip install --system -e .
+
+      - name: Process chunk 2 (hours 21-40)
+        run: |
+          python scripts/process_chunk.py 21 40 2
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Upload chunk 2
+        uses: actions/upload-artifact@v4
+        with:
+          name: chunk-2
+          path: data/nam_conus_*_chunk2.zarr/
+          retention-days: 1
+
+  # Process forecast hours 41-60 (20 hours)
+  process-chunk-3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeccodes-dev libgeos-dev
+
+      - name: Install Python dependencies
+        run: |
+          uv pip install --system -e .
+
+      - name: Process chunk 3 (hours 41-60)
+        run: |
+          python scripts/process_chunk.py 41 60 3
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Upload chunk 3
+        uses: actions/upload-artifact@v4
+        with:
+          name: chunk-3
+          path: data/nam_conus_*_chunk3.zarr/
+          retention-days: 1
+
+  # Merge all chunks into final dataset
+  merge-and-publish:
+    runs-on: ubuntu-latest
+    needs: [process-chunk-1, process-chunk-2, process-chunk-3]
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Install Python dependencies
+        run: |
+          uv pip install --system xarray zarr
+
+      - name: Download chunk 1
+        uses: actions/download-artifact@v4
+        with:
+          name: chunk-1
+          path: data/
+
+      - name: Download chunk 2
+        uses: actions/download-artifact@v4
+        with:
+          name: chunk-2
+          path: data/
+
+      - name: Download chunk 3
+        uses: actions/download-artifact@v4
+        with:
+          name: chunk-3
+          path: data/
+
+      - name: Merge chunks
+        run: |
+          python scripts/merge_chunks.py
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Generate data catalog
+        run: |
+          python scripts/generate_catalog.py
+        continue-on-error: true
+
+      - name: Commit and push catalog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add catalog/
+
+          if git diff --staged --quiet; then
+            echo "No catalog changes to commit"
+          else
+            git commit -m "Update data catalog"
+            git push
+          fi
+        continue-on-error: true
+
+      - name: Show final dataset info
+        run: |
+          echo "=== Generated Dataset ==="
+          ls -lh data/*.zarr 2>/dev/null || echo "No final dataset found"
+          echo ""
+          echo "=== Catalog ==="
+          cat catalog/catalog.json 2>/dev/null || echo "No catalog found"
