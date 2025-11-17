@@ -1,22 +1,11 @@
 name: NAM Data Part 1 - Hours 0-30
 
 on:
-  # Run every 6 hours
-  schedule:
-    - cron: "30 3,9,15,21 * * *"  # 03:30, 09:30, 15:30, 21:30 UTC
-
-  # Allow manual trigger
+  # Manual trigger only
   workflow_dispatch:
-
-  # Run on push to test
-  push:
-    branches:
-      - main
-      - claude/**
 
 permissions:
   contents: write
-  actions: write
 
 jobs:
   # Process hours 0-10
