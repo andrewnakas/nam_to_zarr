@@ -1,0 +1,105 @@
+name: NAM Data Merge - Combine and Cleanup
+
+on:
+  # Manual trigger (called by Part 2)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  merge-and-cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository with all chunks
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Pull latest changes
+        run: |
+          git pull --rebase origin ${{ github.ref_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system xarray zarr numpy
+
+      - name: List available chunks
+        run: |
+          echo "=== Available chunks in repo ==="
+          ls -lh data/*chunk*.zarr 2>/dev/null || echo "No chunks found"
+
+      - name: Merge all chunks
+        run: |
+          python scripts/merge_chunks.py
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Remove chunk files
+        run: |
+          echo "=== Removing chunk files ==="
+          rm -rf data/nam_conus_*_chunk*.zarr
+
+          echo "=== Remaining files ==="
+          ls -lh data/*.zarr 2>/dev/null || echo "No datasets"
+
+      - name: Keep only last 2 final datasets
+        run: |
+          echo "=== Cleaning up old datasets ==="
+          cd data
+          # List all final datasets (not chunks), sort by modification time, keep newest 2
+          ls -t nam_conus_[0-9]*.zarr 2>/dev/null | grep -v chunk | tail -n +3 | while read dir; do
+            echo "Removing old dataset: $dir"
+            rm -rf "$dir"
+          done
+          cd ..
+
+          echo "=== Final datasets (keeping last 2) ==="
+          ls -lth data/nam_conus_[0-9]*.zarr 2>/dev/null | grep -v chunk || echo "No final datasets"
+
+      - name: Generate catalog
+        run: |
+          python scripts/generate_catalog.py
+        continue-on-error: true
+
+      - name: Commit final dataset
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Add final dataset and catalog
+          git add data/ catalog/
+
+          # Remove any chunk references from git
+          git rm -rf data/*chunk*.zarr 2>/dev/null || true
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Merged NAM dataset - $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git pull --rebase origin ${{ github.ref_name }}
+            git push origin ${{ github.ref_name }}
+          fi
+
+      - name: Show final result
+        run: |
+          echo "=== Final Dataset Info ==="
+          ls -lh data/nam_conus_[0-9]*.zarr 2>/dev/null | grep -v chunk || echo "No final datasets"
+
+          echo ""
+          echo "=== Catalog ==="
+          cat catalog/catalog.json 2>/dev/null || echo "No catalog"
+
+          echo ""
+          echo "=== Repository size ==="
+          du -sh data/ 2>/dev/null || echo "No data directory"

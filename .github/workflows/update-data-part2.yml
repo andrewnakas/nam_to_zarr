@@ -1,0 +1,139 @@
+name: NAM Data Part 2 - Hours 31-60
+
+on:
+  # Manual trigger (called by Part 1)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # Process hours 31-40
+  chunk-4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeccodes-dev libgeos-dev
+          uv pip install --system -e .
+
+      - name: Process chunk 4 (hours 31-40)
+        run: python scripts/process_chunk.py 31 40 4
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Commit chunk to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase
+          git add data/nam_conus_*_chunk4.zarr/
+          git diff --staged --quiet || (git commit -m "Add chunk 4 (hours 31-40)" && git pull --rebase && git push)
+
+  # Process hours 41-50
+  chunk-5:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeccodes-dev libgeos-dev
+          uv pip install --system -e .
+
+      - name: Process chunk 5 (hours 41-50)
+        run: python scripts/process_chunk.py 41 50 5
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Commit chunk to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase
+          git add data/nam_conus_*_chunk5.zarr/
+          git diff --staged --quiet || (git commit -m "Add chunk 5 (hours 41-50)" && git pull --rebase && git push)
+
+  # Process hours 51-60
+  chunk-6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeccodes-dev libgeos-dev
+          uv pip install --system -e .
+
+      - name: Process chunk 6 (hours 51-60)
+        run: python scripts/process_chunk.py 51 60 6
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Commit chunk to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase
+          git add data/nam_conus_*_chunk6.zarr/
+          git diff --staged --quiet || (git commit -m "Add chunk 6 (hours 51-60)" && git pull --rebase && git push)
+
+  # Trigger merge workflow after all chunks complete
+  trigger-merge:
+    runs-on: ubuntu-latest
+    needs: [chunk-4, chunk-5, chunk-6]
+    steps:
+      - name: Trigger merge workflow
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'update-data-merge.yml',
+              ref: context.ref
+            });
