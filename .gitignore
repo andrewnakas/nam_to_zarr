@@ -43,9 +43,9 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
-# Data files (Zarr stores can be large, but we want to commit them)
-# Uncomment if you don't want to commit data
-# data/**/*.zarr/
+# Data files (Zarr stores are now committed to repo for workflow)
+# Temporary test files are still ignored
+data/test_*.zarr
 
 # Temporary files
 *.tmp
@@ -56,5 +56,3 @@ htmlcov/
 # uv
 .uv/
 uv.lock
-data/test_*.zarr
-data/

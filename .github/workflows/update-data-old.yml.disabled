@@ -1,0 +1,87 @@
+# DISABLED: This workflow has been replaced by update-data-chunked.yml
+#
+# This monolithic workflow processes all 61 forecast hours in a single job,
+# which takes >25 minutes and can hit timeouts. The chunked version splits
+# processing into 3 parallel jobs (0-20, 21-40, 41-60 hours) that each run
+# under 20 minutes, then merges the results.
+#
+# To re-enable this workflow, remove the .disabled extension from the filename.
+
+name: Update NAM CONUS Data (OLD - DISABLED)
+
+on:
+  # Run every 6 hours (aligned with NAM update cycles: 00, 06, 12, 18 UTC)
+  # Adding 3.5 hour offset to ensure data is available
+  schedule:
+    - cron: "30 3,9,15,21 * * *"  # 03:30, 09:30, 15:30, 21:30 UTC
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+  # Run on push to main (for testing)
+  push:
+    branches:
+      - main
+      - claude/**
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeccodes-dev libgeos-dev
+
+      - name: Install Python dependencies
+        run: |
+          uv pip install --system -e .
+
+      - name: Run data update
+        run: |
+          python -m nam_to_zarr.noaa.nam_conus.forecast.dataset
+        env:
+          PYTHONUNBUFFERED: 1
+
+      # Note: Data files are stored locally and not committed to git
+      # They are ignored via .gitignore due to their large size
+      # Consider uploading to S3 or another storage service if needed
+
+      - name: Generate data catalog
+        run: |
+          python scripts/generate_catalog.py
+        continue-on-error: true
+
+      - name: Commit and push catalog
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add catalog/
+
+          if git diff --staged --quiet; then
+            echo "No catalog changes to commit"
+          else
+            git commit -m "Update data catalog"
+            git push
+          fi
+        continue-on-error: true
