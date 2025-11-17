@@ -1,7 +1,15 @@
 name: NAM Data Merge - Combine and Cleanup
 
 on:
-  # Manual trigger (called by Part 2)
+  # Trigger when Part 2 pushes chunks 4-6
+  push:
+    paths:
+      - 'data/nam_conus_*_chunk[456].zarr/**'
+    branches:
+      - main
+      - claude/**
+
+  # Also allow manual trigger
   workflow_dispatch:
 
 permissions:
