@@ -1,7 +1,15 @@
 name: NAM Data Part 2 - Hours 31-60
 
 on:
-  # Manual trigger only
+  # Auto-trigger when Part 1 pushes chunks 1-3
+  push:
+    paths:
+      - 'data/nam_conus_*_chunk[123].zarr/**'
+    branches:
+      - main
+      - claude/**
+
+  # Also allow manual trigger
   workflow_dispatch:
 
 permissions:

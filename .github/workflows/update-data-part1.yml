@@ -1,7 +1,11 @@
 name: NAM Data Part 1 - Hours 0-30
 
 on:
-  # Manual trigger only
+  # Run every 6 hours
+  schedule:
+    - cron: "30 3,9,15,21 * * *"  # 03:30, 09:30, 15:30, 21:30 UTC
+
+  # Also allow manual trigger
   workflow_dispatch:
 
 permissions:
